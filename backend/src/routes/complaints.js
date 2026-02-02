@@ -1,24 +1,16 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-
-const auth = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" });
 
 const {
   createComplaint,
-  previewPriority,
-  getMyComplaints
-} = require('../controllers/complaintController');
+  getComplaints,
+  previewPriority
+} = require("../controllers/complaintController");
 
-// ✅ AUTH REQUIRED (correct)
-router.post(
-  '/',
-  auth,
-  upload.single('photo'),
-  createComplaint
-);
-
-router.post('/preview-priority', previewPriority);
-router.get('/my', auth, getMyComplaints);
+router.post("/", upload.single("photo"), createComplaint);
+router.get("/", getComplaints);
+router.post("/preview-priority", previewPriority);
 
 module.exports = router;

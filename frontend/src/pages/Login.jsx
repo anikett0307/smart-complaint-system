@@ -17,7 +17,7 @@ export default function Login({ onSuccess }){
       const endpoint = isLogin ? '/auth/login' : '/auth/register'
       const body = isLogin 
         ? { email, password }
-        : { email, password, name }
+        : { name , email, password}
       console.log('Attempting', endpoint, 'with:', body)
       const res = await client.post(endpoint, body)
       console.log('Success:', res.data)
@@ -37,7 +37,7 @@ export default function Login({ onSuccess }){
         nav('/submit')
       }
     } catch (err) {
-      const msg = err.response?.data?.error || err.message || 'Unknown error'
+      const msg = err.response?.data?.message || err.message || 'Unknown error'
       console.error('Auth error:', msg)
       setError(msg)
     }

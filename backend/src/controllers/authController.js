@@ -1,135 +1,83 @@
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const userModel = require('../models/userModel');
+const bcrypt = require("bcrypt");
+const { mockDB } = require("../models/mockDB");
 
 /**
- * REGISTER
+ * Register user
  */
-const register = async (req, res) => {
+exports.register = async (req, res) => {
   try {
-    const { email, password, name, role, adminSecret } = req.body;
+    const { name, email, password } = req.body;
 
-    if (!email || !password || !name) {
+    if (!name || !email || !password) {
       return res.status(400).json({
-        error: 'Email, password, and name are required'
+        message: "All fields are required"
       });
     }
 
-    const existing = await userModel.findUserByEmail(email);
-    if (existing) {
-      return res.status(400).json({ error: 'Email already registered' });
+    const existingUser = mockDB.users.find(u => u.email === email);
+    if (existingUser) {
+      return res.status(400).json({
+        message: "User already exists"
+      });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    let assignedRole = 'user';
-    if (role === 'admin') {
-      if (!process.env.ADMIN_SECRET || adminSecret !== process.env.ADMIN_SECRET) {
-        return res.status(403).json({ error: 'Cannot create admin' });
-      }
-      assignedRole = 'admin';
-    }
-
-    const user = await userModel.createUser(
-      email,
-      passwordHash,
+    const user = {
+      id: mockDB.users.length + 1,
       name,
-      assignedRole
-    );
+      email,
+      password: hashedPassword,
+      role: "user"
+    };
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
+    mockDB.users.push(user);
 
     res.status(201).json({
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role
-      }
+      message: "Registration successful"
     });
-  } catch (err) {
-    console.error('[REGISTER ERROR]', err);
-    res.status(500).json({ error: 'Registration failed' });
+  } catch (error) {
+    console.error("Register error:", error.message);
+    res.status(500).json({
+      message: "Registration failed"
+    });
   }
 };
 
 /**
- * LOGIN
+ * Login user
  */
-const login = async (req, res) => {
+exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({
-        error: 'Email and password required'
+    const user = mockDB.users.find(u => u.email === email);
+    if (!user) {
+      return res.status(401).json({
+        message: "Invalid credentials"
       });
     }
 
-    const user = await userModel.findUserByEmail(email);
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    // ✅ WORKS FOR BOTH: password OR password_hash
-    const storedHash = user.password_hash || user.password;
-    if (!storedHash) {
-      return res.status(500).json({ error: 'Password not set for user' });
-    }
-
-    const isMatch = await bcrypt.compare(password, storedHash);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
     }
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
-
-    res.json({
-      token,
+    res.status(200).json({
+      message: "Login successful",
       user: {
         id: user.id,
-        email: user.email,
         name: user.name,
+        email: user.email,
         role: user.role
       }
     });
-  } catch (err) {
-    console.error('[LOGIN ERROR]', err);
-    res.status(500).json({ error: 'Login failed' });
-  }
-};
-
-/**
- * ME
- */
-const me = async (req, res) => {
-  try {
-    const user = await userModel.findUserById(req.userId);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role
-      }
+  } catch (error) {
+    console.error("Login error:", error.message);
+    res.status(500).json({
+      message: "Login failed"
     });
-  } catch (err) {
-    console.error('[ME ERROR]', err);
-    res.status(500).json({ error: 'Failed to fetch user' });
   }
 };
-
-module.exports = { register, login, me };
