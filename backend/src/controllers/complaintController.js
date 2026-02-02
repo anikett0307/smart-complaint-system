@@ -2,6 +2,7 @@ const { createComplaint, getAllComplaints } = require("../models/mockDB");
 
 /**
  * Create a new complaint (supports photo upload)
+ * Uses SAME AI logic as preview
  */
 exports.createComplaint = (req, res) => {
   try {
@@ -16,12 +17,58 @@ exports.createComplaint = (req, res) => {
       });
     }
 
+    // 🔁 SAME AI LOGIC AS PREVIEW
+    const text = `${title} ${description}`.toLowerCase();
+
+    const HIGH_RISK = {
+      accident: 5,
+      fire: 5,
+      emergency: 5,
+      danger: 4,
+      injured: 4,
+      hospital: 3
+    };
+
+    const MEDIUM_RISK = {
+      "not working": 3,
+      broken: 3,
+      damaged: 2,
+      delay: 2,
+      leakage: 2,
+      power: 2
+    };
+
+    const LOW_RISK = {
+      noise: 1,
+      dirty: 1,
+      garbage: 1,
+      slow: 1
+    };
+
+    let score = 0;
+    const calculateScore = (keywords) => {
+      Object.keys(keywords).forEach(word => {
+        if (text.includes(word)) {
+          score += keywords[word];
+        }
+      });
+    };
+
+    calculateScore(HIGH_RISK);
+    calculateScore(MEDIUM_RISK);
+    calculateScore(LOW_RISK);
+
+    let priority = "Low";
+    if (score >= 7) priority = "High";
+    else if (score >= 3) priority = "Medium";
+
     const complaint = createComplaint({
       title,
       description,
       category,
       location,
-      photo
+      photo,
+      priority
     });
 
     res.status(201).json({
@@ -64,27 +111,57 @@ exports.previewPriority = (req, res) => {
   const { title, description } = req.body;
 
   if (!title || !description) {
-    return res.status(400).json({
-      message: "Title and description required"
-    });
+    return res.status(400).json({ message: "Title and description required" });
   }
 
   const text = `${title} ${description}`.toLowerCase();
 
-  let priority = "Low";
-  if (
-    text.includes("accident") ||
-    text.includes("danger") ||
-    text.includes("emergency")
-  ) {
-    priority = "High";
-  } else if (
-    text.includes("broken") ||
-    text.includes("not working") ||
-    text.includes("delay")
-  ) {
-    priority = "Medium";
-  }
+  const HIGH_RISK = {
+    accident: 5,
+    fire: 5,
+    emergency: 5,
+    danger: 4,
+    injured: 4,
+    hospital: 3
+  };
 
-  res.json({ priority });
+  const MEDIUM_RISK = {
+    "not working": 3,
+    broken: 3,
+    damaged: 2,
+    delay: 2,
+    leakage: 2,
+    power: 2
+  };
+
+  const LOW_RISK = {
+    noise: 1,
+    dirty: 1,
+    garbage: 1,
+    slow: 1
+  };
+
+  let score = 0;
+
+  const calculateScore = (keywords) => {
+    Object.keys(keywords).forEach(word => {
+      if (text.includes(word)) {
+        score += keywords[word];
+      }
+    });
+  };
+
+  calculateScore(HIGH_RISK);
+  calculateScore(MEDIUM_RISK);
+  calculateScore(LOW_RISK);
+
+  let priority = "Low";
+  if (score >= 7) priority = "High";
+  else if (score >= 3) priority = "Medium";
+
+  res.json({
+    priority,
+    score,
+    confidence: `${Math.min(95, score * 10)}%`
+  });
 };

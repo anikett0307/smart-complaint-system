@@ -37,11 +37,11 @@ function ImageModal({ images, onClose }) {
           <h2 className="text-xl font-bold">Complaint Images</h2>
           <button onClick={onClose} className="text-2xl font-bold text-gray-600">×</button>
         </div>
-        
+
         <div className="mb-4">
           <img src={images[currentIndex]} alt="complaint" className="w-full max-h-96 object-contain rounded" />
         </div>
-        
+
         <div className="flex justify-between items-center">
           <div className="text-sm text-gray-600">
             Image {currentIndex + 1} of {images.length}
@@ -49,13 +49,13 @@ function ImageModal({ images, onClose }) {
           <div className="flex gap-2">
             {images.length > 1 && (
               <>
-                <button 
+                <button
                   onClick={() => setCurrentIndex((currentIndex - 1 + images.length) % images.length)}
                   className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
                 >
                   ← Previous
                 </button>
-                <button 
+                <button
                   onClick={() => setCurrentIndex((currentIndex + 1) % images.length)}
                   className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
                 >
@@ -70,29 +70,26 @@ function ImageModal({ images, onClose }) {
   )
 }
 
-export default function AdminDashboard(){
+export default function AdminDashboard() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [selectedImages, setSelectedImages] = useState(null)
 
-  const load = async ()=>{
+  const load = async () => {
     setLoading(true)
-    try{
-      const res = await client.get('/admin/complaints?sort=priority')
-      setItems(res.data.data || [])
-    }catch(e){ console.error('[ADMIN LOAD ERROR]', e) }
+    try {
+      const res = await client.get('/complaints')   // ✅ changed
+      setItems(res.data.complaints || [])           // ✅ changed
+    } catch (e) {
+      console.error('[ADMIN LOAD ERROR]', e)
+    }
     setLoading(false)
   }
 
-  useEffect(()=>{ load() },[])
+  useEffect(() => { load() }, [])
 
-  const updateStatus = async (id, status, remark, idx) => {
-    try{
-      const res = await client.put(`/complaints/${id}/status`, { status, remark })
-      // Refresh full list to ensure data sync
-      await load()
-      alert('Status updated successfully')
-    }catch(e){ console.error('[UPDATE ERROR]', e); alert('Failed to update') }
+  const updateStatus = () => {                        // ✅ changed
+    alert('Status update feature not enabled yet')
   }
 
   return (
@@ -100,14 +97,14 @@ export default function AdminDashboard(){
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold mb-2 text-gray-800">📊 Admin Dashboard</h1>
         <p className="text-gray-600 mb-6">Manage all complaints sorted by priority</p>
-        
+
         {loading ? (
           <div className="text-center py-8">Loading complaints...</div>
         ) : items.length === 0 ? (
           <div className="text-center py-8 text-gray-500">No complaints yet</div>
         ) : (
           <div className="space-y-4">
-            {items.map((complaint, idx) => (
+            {items.map((complaint) => (
               <div key={complaint.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition">
                 <div className="grid grid-cols-4 gap-4 mb-4">
                   <div>
@@ -121,8 +118,8 @@ export default function AdminDashboard(){
                   <div>
                     <p className="text-xs text-gray-500 font-semibold">PRIORITY (AI)</p>
                     <span className={`inline-block px-4 py-2 rounded text-white text-sm font-bold ${
-                      complaint.priority === 'High' ? 'bg-red-600' : 
-                      complaint.priority === 'Medium' ? 'bg-orange-600' : 
+                      complaint.priority === 'High' ? 'bg-red-600' :
+                      complaint.priority === 'Medium' ? 'bg-orange-600' :
                       'bg-green-600'
                     }`}>
                       {complaint.priority}
@@ -147,28 +144,30 @@ export default function AdminDashboard(){
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <p className="text-xs text-gray-500 font-semibold mb-2">IMAGES ({complaint.images?.length || 0})</p>
-                    {complaint.images && complaint.images.length > 0 ? (
-                      <div className="grid grid-cols-3 gap-2">
-                        {complaint.images.map((img, imgIdx) => (
-                          <div 
-                            key={imgIdx}
-                            onClick={() => setSelectedImages(complaint.images)}
-                            className="cursor-pointer hover:opacity-80 transition"
-                          >
-                            <img src={img} alt={`complaint-${imgIdx}`} className="w-full h-24 object-cover rounded border-2 border-gray-300" />
-                          </div>
-                        ))}
-                      </div>
+                    <p className="text-xs text-gray-500 font-semibold mb-2">
+                      IMAGES ({complaint.photo ? 1 : 0})
+                    </p>
+
+                    {complaint.photo ? (
+                      <img
+                        src={`http://localhost:4000/uploads/${complaint.photo}`}
+                        alt="complaint"
+                        className="w-24 h-24 object-cover rounded border-2 border-gray-300 cursor-pointer"
+                        onClick={() =>
+                          setSelectedImages([`http://localhost:4000/uploads/${complaint.photo}`])
+                        }
+                      />
                     ) : (
-                      <div className="text-sm text-gray-500 p-3 bg-gray-100 rounded">No images attached</div>
+                      <div className="text-sm text-gray-500 p-3 bg-gray-100 rounded">
+                        No images attached
+                      </div>
                     )}
                   </div>
 
                   <div>
                     <p className="text-xs text-gray-500 font-semibold mb-2">UPDATE STATUS</p>
-                    <StatusForm complaint={complaint} onUpdate={(s, r) => updateStatus(complaint.id, s, r, idx)} />
-                    <Link 
+                    <StatusForm complaint={complaint} onUpdate={updateStatus} />
+                    <Link
                       to={`/complaint/${complaint.id}`}
                       className="inline-block mt-3 text-sm text-blue-600 hover:underline"
                     >
@@ -182,7 +181,9 @@ export default function AdminDashboard(){
         )}
       </div>
 
-      {selectedImages && <ImageModal images={selectedImages} onClose={() => setSelectedImages(null)} />}
+      {selectedImages && (
+        <ImageModal images={selectedImages} onClose={() => setSelectedImages(null)} />
+      )}
     </div>
   )
 }

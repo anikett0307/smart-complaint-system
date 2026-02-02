@@ -10,9 +10,8 @@ export default function Track(){
     (async () => {
       setLoading(true)
       try {
-        // Fetch user's own complaints only
-        const res = await client.get('/complaints/my')
-        setItems(res.data.data || [])
+        const res = await client.get('/complaints')
+        setItems(res.data.complaints || [])
       } catch (e) {
         console.error(e)
       }
@@ -42,7 +41,17 @@ export default function Track(){
                     <div className="flex-1">
                       <h3 className="text-xl font-bold text-gray-800">{complaint.title}</h3>
                       <p className="text-gray-600 mt-2 line-clamp-2">{complaint.description}</p>
+
+                      {/* ✅ PHOTO DISPLAY (ADDED) */}
+                      {complaint.photo && (
+                        <img
+                          src={`http://localhost:4000/uploads/${complaint.photo}`}
+                          alt="complaint"
+                          className="mt-3 w-32 h-32 object-cover rounded border"
+                        />
+                      )}
                     </div>
+
                     <div className="ml-4 flex gap-2 flex-col items-end">
                       <span className={`px-4 py-2 rounded-full text-white font-bold text-sm ${
                         complaint.priority === 'High' ? 'bg-red-600' : 
@@ -64,7 +73,10 @@ export default function Track(){
                   <div className="grid grid-cols-3 gap-4 text-sm text-gray-600">
                     <div><strong>Category:</strong> {complaint.category}</div>
                     <div><strong>Location:</strong> {complaint.location}</div>
-                    <div><strong>Submitted:</strong> {new Date(complaint.created_at).toLocaleDateString()}</div>
+                    <div>
+                      <strong>Submitted:</strong>{" "}
+                      {new Date(complaint.createdAt).toLocaleDateString()}
+                    </div>
                   </div>
 
                   <div className="mt-4 text-blue-600 font-semibold hover:underline">

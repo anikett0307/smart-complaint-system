@@ -22,4 +22,3 @@ export const setToken = (t) => {
 }
 
 export default client
-

@@ -36,7 +36,7 @@ function createComplaint(data) {
     category: data.category,
     location: data.location,
     photo: data.photo || null,
-    priority: "Medium",
+    priority: data.priority || "Medium",
     status: "Pending",
     createdAt: new Date().toISOString()
   };
