@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: smart_complaints
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+
+  ai:
+    build:
+      context: ./ai
+    ports:
+      - '8001:8001'
+    restart: on-failure
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - '4000:4000'
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/smart_complaints
+      JWT_SECRET: change-me
+      ADMIN_SECRET: change-me
+      AI_SERVICE_URL: http://ai:8001
+    depends_on:
+      - db
+      - ai
+    volumes:
+      - ./backend/uploads:/app/uploads
+    restart: on-failure
+
+volumes:
+  db_data:
