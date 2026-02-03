@@ -30,7 +30,7 @@ let complaintId = 1;
  */
 function createComplaint(data) {
   const complaint = {
-    id: complaintId++,
+    id: ++complaintId,
     title: data.title,
     description: data.description,
     category: data.category,
@@ -38,12 +38,14 @@ function createComplaint(data) {
     photo: data.photo || null,
     priority: data.priority || "Medium",
     status: "Pending",
-    createdAt: new Date().toISOString()
+    created_at: new Date()
   };
 
-  mockDB.complaints.push(complaint);
+  mockDB.complaints.push(complaint);   // ✅ MUST be AFTER complaint is defined
   return complaint;
 }
+
+
 
 /**
  * Get All Complaints
@@ -57,3 +59,27 @@ module.exports = {
   createComplaint,
   getAllComplaints
 };
+function updateStatus(id, newStatus, remark) {
+  const complaint = mockDB.complaints.find(c => c.id === id);
+  if (!complaint) return false;
+
+  const oldStatus = complaint.status || "Pending";
+  complaint.status = newStatus;
+
+  // history array
+  if (!mockDB.history) mockDB.history = [];
+
+  mockDB.history.push({
+    id: mockDB.history.length + 1,
+    complaint_id: id,
+    old_status: oldStatus,
+    new_status: newStatus,
+    remark,
+    admin_email: "admin@example.com",
+    created_at: new Date()
+  });
+
+  return true;
+}
+
+module.exports.updateStatus = updateStatus;

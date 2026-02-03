@@ -7,17 +7,23 @@ export default function Track(){
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    (async () => {
+  const load = async () => {
+    try {
       setLoading(true)
-      try {
-        const res = await client.get('/complaints')
-        setItems(res.data.complaints || [])
-      } catch (e) {
-        console.error(e)
-      }
+      const res = await client.get('/complaints')
+      setItems(res.data.complaints || [])
+    } catch (e) {
+      console.error(e)
+    } finally {
       setLoading(false)
-    })()
-  }, [])
+    }
+  }
+
+  load()
+  const interval = setInterval(load, 5000) // refresh every 5s
+  return () => clearInterval(interval)
+}, [])
+
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -75,7 +81,8 @@ export default function Track(){
                     <div><strong>Location:</strong> {complaint.location}</div>
                     <div>
                       <strong>Submitted:</strong>{" "}
-                      {new Date(complaint.createdAt).toLocaleDateString()}
+                      {new Date(complaint.created_at).toLocaleDateString()}
+
                     </div>
                   </div>
 

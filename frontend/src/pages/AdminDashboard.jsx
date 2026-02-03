@@ -88,9 +88,18 @@ export default function AdminDashboard() {
 
   useEffect(() => { load() }, [])
 
-  const updateStatus = () => {                        // ✅ changed
-    alert('Status update feature not enabled yet')
+  const updateStatus = async (id, status, remark) => {
+  try {
+    await client.put(`/complaints/${id}/status`, {
+      status,
+      remark
+    })
+    load() // refresh admin list
+  } catch (err) {
+    console.error('Status update failed', err)
+    alert('Failed to update status')
   }
+}
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -166,7 +175,13 @@ export default function AdminDashboard() {
 
                   <div>
                     <p className="text-xs text-gray-500 font-semibold mb-2">UPDATE STATUS</p>
-                    <StatusForm complaint={complaint} onUpdate={updateStatus} />
+                    <StatusForm
+                      complaint={complaint}
+                      onUpdate={(status, remark) =>
+                      updateStatus(complaint.id, status, remark)
+                      }
+                    />
+
                     <Link
                       to={`/complaint/${complaint.id}`}
                       className="inline-block mt-3 text-sm text-blue-600 hover:underline"

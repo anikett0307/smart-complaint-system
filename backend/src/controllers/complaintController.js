@@ -103,6 +103,25 @@ exports.getComplaints = (req, res) => {
     });
   }
 };
+exports.updateComplaintStatus = (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, remark } = req.body;
+
+    const { updateStatus } = require("../models/mockDB");
+
+    const updated = updateStatus(Number(id), status, remark || "");
+
+    if (!updated) {
+      return res.status(404).json({ message: "Complaint not found" });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Status update error:", err.message);
+    res.status(500).json({ message: "Failed to update status" });
+  }
+};
 
 /**
  * Preview AI Priority (rule-based)
