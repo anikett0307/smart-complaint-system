@@ -1,5 +1,5 @@
 const bcrypt = require("bcrypt");
-const { mockDB } = require("../models/mockDB");
+const { mockDB } = require("../models/db.mock");
 
 /**
  * Register user

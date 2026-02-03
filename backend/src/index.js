@@ -27,4 +27,4 @@ app.use('/api/admin', adminRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Backend running on ${PORT}`));
+app.listen(PORT, () =>{ console.log(`Backend running on ${PORT}`)});

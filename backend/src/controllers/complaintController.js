@@ -1,4 +1,4 @@
-const { createComplaint, getAllComplaints } = require("../models/mockDB");
+const { createComplaint, getAllComplaints } = require("../models/db.mock");
 
 /**
  * Create a new complaint (supports photo upload)
@@ -108,7 +108,7 @@ exports.updateComplaintStatus = (req, res) => {
     const { id } = req.params;
     const { status, remark } = req.body;
 
-    const { updateStatus } = require("../models/mockDB");
+    const { updateStatus } = require("../models/db.mock");
 
     const updated = updateStatus(Number(id), status, remark || "");
 
